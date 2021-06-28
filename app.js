@@ -43,12 +43,16 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('12345-6789-09876-54321'));
 
 app.use(session({
-  name: 'session-id',
+  name: 'session-id',//cookie name
   secret: '12345-6789-09876-54321',
   saveUninitialized: false, //when new session is created with no updates, won't be saved and no cookie is sent. Prevents empty sessions/cookies being setup
   resave: false, //when session is created and updated, will continue to save when a request is made for current session, keeps session marked as active
   store: new FileStore()
 }))
+
+//moved above auth function to allow users to access without being logged in or to create accounts
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
 
 // for authentication
 function auth(req, res, next) {
@@ -60,18 +64,19 @@ function auth(req, res, next) {
   if (!req.session.user){//used for session
 
     //console.log(req.headers);
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) { //no username or password submitted
-      const err = new Error('You are not authenticated!');
-      res.setHeader('WWW-Authenticate', 'Basic');//asks user to login again
-      err.status = 401;
-      return next(err);
-    }
-    
-    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-    console.log('test:', auth);
 
+    //not needed for express session and user router
+    /*const authHeader = req.headers.authorization;
+    if (!authHeader) { //no username or password submitted*/
+
+    const err = new Error('You are not authenticated!');
+    //res.setHeader('WWW-Authenticate', 'Basic');//asks user to login again
+    err.status = 401;
+    return next(err);
+  
+    //used before using user router
+    /*const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    console.log('test:', auth);
 
     const user = auth[0];
     const pass = auth[1];
@@ -85,11 +90,12 @@ function auth(req, res, next) {
       res.setHeader('WWW-Authenticate', 'Basic');
       err.status = 401;
       return next(err);
-    }
+    }*/
 
   }else {
     //if (req.signedCookies.user === 'admin'){ //used with cookie parser
-    if (req.session.user === 'admin'){//used with express sessions
+    //if (req.session.user === 'admin'){//used with express sessions
+    if (req.session.user === 'authenticated'){
       return next();
     }else {
       const err = new Error('You are not authenticated!');
@@ -101,14 +107,10 @@ function auth(req, res, next) {
 
 app.use(auth);
 
-
-
 // for authentication
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/campsites', campsiteRouter);
 app.use('/promotions', promotionRouter);
 app.use('/partners', partnerRouter);
