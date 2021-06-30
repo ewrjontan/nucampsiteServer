@@ -1,14 +1,10 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-//for express session setup
-const session = require('express-session');
-const FileStore = require('session-file-store')(session);
 const passport = require('passport');
-const authenticate = require('./authenticate');
+const config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -18,7 +14,7 @@ const partnerRouter = require('./routes/partnerRouter');
 
 const mongoose = require('mongoose');
 
-const url = 'mongodb://localhost:27017/nucampsite';
+const url = config.mongoUrl;
 const connect = mongoose.connect(url, {
 	//to avoid deprecation warnings
 	useCreateIndex: true,
@@ -44,35 +40,13 @@ app.use(express.urlencoded({ extended: false }));
 //for cookie setup with authentication, not used with express session
 //app.use(cookieParser('12345-6789-09876-54321'));
 
-app.use(session({
-	name: 'session-id',//cookie name
-	secret: '12345-6789-09876-54321',
-	saveUninitialized: false, //when new session is created with no updates, won't be saved and no cookie is sent. Prevents empty sessions/cookies being setup
-	resave: false, //when session is created and updated, will continue to save when a request is made for current session, keeps session marked as active
-	store: new FileStore()
-}))
-
 app.use(passport.initialize());
-app.use(passport.session());
+
 
 //moved above auth function to allow users to access without being logged in or to create accounts
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-// for authentication
-function auth(req, res, next) {
-    console.log(req.user);
-
-    if (!req.user){
-        const err = new Error('You are not authenticated!');
-        err.status = 401;
-        return next(err);
-    }else {
-        return next();  
-    }
-}
-
-app.use(auth);
 
 // for authentication
 
