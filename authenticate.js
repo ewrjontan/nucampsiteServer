@@ -2,7 +2,7 @@
 
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
-const User = require('./models/user');
+const User = require('./models/user'); 
 
 //for Jwt
 const JwtStrategy = require('passport-jwt').Strategy;
@@ -42,3 +42,15 @@ exports.jwtPassport = passport.use(
 );
 
 exports.verifyUser = passport.authenticate('jwt', {session: false});
+
+//workshop week 3
+exports.verifyAdmin = function(req, res, next){
+    console.log("xxxxx  test: xxxxxxxxxxxxx", req.user.admin);    
+    if (req.user.admin){
+        return next();
+    }else{
+        const err = new Error('You are not authorized to perform this operation!');
+        err.status = 403;
+        return next(err);
+    }
+};
