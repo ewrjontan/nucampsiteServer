@@ -177,13 +177,11 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
         .populate('comments.author')
         .then(campsite => {
 
-            console.log("xxxx test current user:", req.user.username);
-            console.log("xxxx test user leaving comment:", req.user.username);
-
-            //console.log("new test comment ID: ", campsite.comments.id(req.params.commentId).author.username);
+            //console.log("xxxx test current user:", req.user.username);
+            //console.log("xxxx test user leaving comment:", req.user.username);
 
             let commentAuthor = campsite.comments.id(req.params.commentId).author.username;
-            console.log("xxx test author of comment to modify:", commentAuthor);
+            //console.log("xxx test author of comment to modify:", commentAuthor);
 
             if (req.user.username !== commentAuthor){
                 console.log("author does not match user"); 
@@ -223,24 +221,38 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
     .delete(authenticate.verifyUser, (req, res, next) => {
         //deletes every document in collection
         Campsite.findById(req.params.campsiteId)
+        .populate('comments.author')
         .then(campsite => {
-            if (campsite && campsite.comments.id(req.params.commentId)) {
-                campsite.comments.id(req.params.commentId).remove();
-                campsite.save()
-                .then(campsite => {
-                    res.statusCode = 200;
-                    res.setHeader('Content-Type', 'application/json');
-                    res.json(campsite);
-                })
-                .catch(err => next(err));
-            } else if (!campsite) {
-                err = new Error(`Campsite ${req.params.campsiteId} not found`);
-                err.status = 404;
-                return next(err);
-            } else{
-                err = new Error(`Comment ${req.params.commentId} not found`);
-                err.status = 404;
-                return next(err);
+            console.log("xxxx test current user:", req.user.username);
+
+            let commentAuthor = campsite.comments.id(req.params.commentId).author.username;
+            console.log("xxx test author of comment to delete:", commentAuthor);
+
+            if (req.user.username !== commentAuthor){
+                console.log("author does not match user"); 
+                err = new Error("You are not authorized to delete this comment!");
+                err.status = 403;
+                return next(err);    
+            }else{
+            
+                if (campsite && campsite.comments.id(req.params.commentId)) {
+                    campsite.comments.id(req.params.commentId).remove();
+                    campsite.save()
+                    .then(campsite => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(campsite);
+                    })
+                    .catch(err => next(err));
+                } else if (!campsite) {
+                    err = new Error(`Campsite ${req.params.campsiteId} not found`);
+                    err.status = 404;
+                    return next(err);
+                } else{
+                    err = new Error(`Comment ${req.params.commentId} not found`);
+                    err.status = 404;
+                    return next(err);
+                }
             }
         })
         .catch(err => next(err));
