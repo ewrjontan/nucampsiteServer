@@ -1,0 +1,22 @@
+.delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
+    Favorite.findOne({user: req.user._id })
+    .then(favorite => {
+        if (favorite) {
+            const index = favorite.campsites.indexOf(req.params.campsiteId);
+            if (index >= 0) {
+                favorite.campsites.splice(index, 1);
+            }
+            favorite.save()
+            .then(favorite => {
+                console.log('Favorite Campsite Deleted!', favorite);
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json(favorite);
+            }).catch(err => next(err));
+        } else {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'text/plain');
+            res.end('You do not have any favorites to delete.');
+        }
+    }).catch(err => next(err))
+});

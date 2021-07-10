@@ -102,7 +102,7 @@ favoriteRouter.route('/:campsiteId')
                 }else{
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'plain/text');
-                    res.end(`${req.params.campsiteId} already in the list of favorites.`);
+                    res.end(`${req.params.campsiteId} is already in the list of favorites.`);
                 }
                 
             }else {
@@ -127,16 +127,48 @@ favoriteRouter.route('/:campsiteId')
     })
     .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
         Favorite.findOne({user: req.user._id})
+        .then(favorite => {
+            if (favorite) {
+                console.log('favorites:');
+                console.log(favorite);
+
+                if (favorite.campsites.indexOf(req.params.campsiteId) !== -1) {
+                    console.log('index of 60e9cb2ed778963e08c2db2d');
+                    console.log(favorite.campsites.indexOf(req.params.campsiteId));
+                    
+                    favorite.campsites.splice(favorite.campsites.indexOf(req.params.campsiteId), 1);
+
+                    favorite.save()
+                    
+                    .then((fav) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(fav);     
+                    })
+                    .catch(err => next(err));     
+                }else {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'plain/text');
+                    res.end(`${req.params.campsiteId} was not found in your favorites.`);    
+                }
+
+            }else{
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'plain/text');
+                res.end(`${req.user._id} does not have any favorites.`);
+            }
+        })
+        .catch(err => next(err));
         
 
 
-        Partner.findByIdAndDelete(req.params.partnerId)
+        /*Partner.findByIdAndDelete(req.params.partnerId)
         .then(response => {
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
             res.json(response);    
         })
-        .catch(err => next(err));
+        .catch(err => next(err));*/
     });
 
 
